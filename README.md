@@ -1,2 +1,2 @@
 # refs
-A pureref clone
+A pureref clone. Go support pureref (https://www.pureref.com/). Its great
