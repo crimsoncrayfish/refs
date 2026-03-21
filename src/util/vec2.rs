@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 use eframe::egui;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
@@ -11,6 +11,10 @@ impl Vec2 {
     ///Creates a new instance of Vec2
     pub fn new(x: f32, y: f32) -> Self {
         Self { x, y }
+    }
+    ///Creates a new instance of Vec2
+    pub fn splat(r: f32) -> Self {
+        Self { x: r, y: r }
     }
     /// Creates a zero Vec2
     pub fn zero() -> Self {
@@ -47,6 +51,18 @@ impl Vec2 {
         Self {
             x: self.x + (other.x - self.x) * t,
             y: self.y + (other.y - self.y) * t,
+        }
+    }
+    pub fn min(&self, other: Self) -> Self {
+        Self {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+        }
+    }
+    pub fn max(&self, other: Self) -> Self {
+        Self {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
         }
     }
 }
@@ -268,5 +284,21 @@ mod test {
         let a: Vec2 = e_vec2.into();
         assert_eq!(a.x, e_vec2.x);
         assert_eq!(a.y, e_vec2.y);
+    }
+}
+
+#[cfg(test)]
+mod prop_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    fn v2_strat() -> impl Strategy<Value = Vec2> {
+        (-1000.0f32..1000.0, -1000.0f32..1000.0).prop_map(|(x, y)| Vec2::new(x, y))
+    }
+    proptest! {
+        #[test]
+        fn test_length_is_not_negative(a in v2_strat()) {
+            assert!(a.length() >= 0.0);
+        }
     }
 }

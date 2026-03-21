@@ -1,8 +1,11 @@
 [package]
-name = "crayfishrefs"
+name = "refboard"
 version = "0.1.0"
 edition = "2024"
 description = "a PureRef clone to learn Rust"
+
+[dev-dependencies]
+proptest = "1.10.0"
 
 [dependencies]
 eframe = "0.33.3"
