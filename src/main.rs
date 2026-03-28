@@ -3,7 +3,8 @@ use eframe::egui;
 mod app;
 use app::App;
 
-const APP_NAME: &'static str = "Refs";
+const APP_NAME: &str = "Refs";
+
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
