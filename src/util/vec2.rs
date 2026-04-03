@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::{
+    fmt::{self, write},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 use eframe::egui;
 
@@ -64,6 +67,11 @@ impl Vec2 {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
         }
+    }
+}
+impl fmt::Display for Vec2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(x:{}, y:{})", self.x, self.y)
     }
 }
 impl Add for Vec2 {

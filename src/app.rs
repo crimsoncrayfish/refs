@@ -1,95 +1,99 @@
 use std::time::{Duration, SystemTime};
 
-use eframe::egui::{
-    self, Color32, CornerRadius, PointerButton, Pos2, Rect, Response, Stroke, Vec2, pos2,
-};
+use eframe::egui::{self, Color32, CornerRadius, PointerButton, Pos2, Response, Stroke, pos2};
+
+use crate::{camera::Camera, world::world::World};
 
 pub struct App {
-    last_fps: f64,
-    current_fps: f64,
-    latest_err: String,
-    elapsed: Duration,
-    start: SystemTime,
     state: AppState,
+    world: World,
+    camera: Camera,
 }
 
 pub struct AppState {
+    started_at: SystemTime,
+    elapsed: Duration,
     track_fps: bool,
+    last_fps: f64,
+    current_fps: f64,
     debug: bool,
     show_coords: bool,
     show_grid: bool,
-    zoom: f32,
-    //TODO: convert to world coords
-    offset: egui::Vec2,            //World Coordinates
     mouse_pos: Option<egui::Pos2>, //Window Coordinates
+}
+impl AppState {
+    pub fn new() -> Self {
+        Self {
+            started_at: SystemTime::now(),
+            elapsed: Duration::from_secs(0),
+            track_fps: true,
+            show_coords: false,
+            show_grid: true,
+            debug: false,
+            last_fps: 0.0,
+            current_fps: 0.0,
+            mouse_pos: None,
+        }
+    }
+    pub fn reset(&mut self) {
+        self.show_coords = false;
+        self.show_grid = true;
+        self.track_fps = false;
+        self.debug = false;
+    }
+    pub fn toggle_grid(&mut self) {
+        self.show_grid = !self.show_grid;
+    }
+    pub fn toggle_coords(&mut self) {
+        self.show_coords = !self.show_coords;
+    }
+    pub fn toggle_debug(&mut self) {
+        self.debug = !self.debug;
+    }
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
-            last_fps: 0.0,
-            current_fps: 0.0,
-            latest_err: "".to_string(),
-            elapsed: Duration::from_secs(0),
-            start: SystemTime::now(),
-            state: AppState {
-                offset: egui::Vec2::ZERO,
-                track_fps: true,
-                debug: false,
-                show_grid: true,
-                show_coords: false,
-                zoom: 1.0,
-                mouse_pos: None,
-            },
+            camera: Camera::new(),
+            world: World::new(),
+            state: AppState::new(),
         }
     }
 }
-
 impl App {
-    pub fn toggle_grid(&mut self) {
-        self.state.show_grid = !self.state.show_grid;
-    }
-    pub fn toggle_coords(&mut self) {
-        self.state.show_coords = !self.state.show_coords;
-    }
-    pub fn toggle_debug(&mut self) {
-        self.state.debug = !self.state.debug;
-    }
     pub fn reset(&mut self) {
-        self.state.offset = Vec2::ZERO;
-        self.state.zoom = 1.0;
-        self.state.show_coords = false;
-        self.state.show_grid = true;
+        self.camera.reset();
+        self.state.reset();
     }
-    fn coord_to_world_coord(&self, coord: Pos2) -> Pos2 {
-        coord / self.state.zoom + self.state.offset
-    }
-    fn screen_offset(&self) -> Vec2 {
-        -self.state.offset * self.state.zoom
-    }
-    pub fn handle_scroll(&mut self, scroll_by: f32, _mouse_pos: Option<Pos2>) {
-        //change the grid spacing between 25px and 100px to simulate zoom
-        let zoom_sensitivity = 0.005;
-        let new_zoom = (self.state.zoom + scroll_by * zoom_sensitivity).clamp(1.0, 5.0);
-        //TODO: change offset based on mouse pos
-        if let Some(m) = self.state.mouse_pos {
-            self.state.offset = self.coord_to_world_coord(m) - (m / new_zoom);
-        }
-        self.state.zoom = new_zoom;
+    pub fn handle_scroll(&mut self, scroll_by: f32, mouse_pos: Option<Pos2>) {
+        self.camera.update_zoom(scroll_by, mouse_pos);
     }
     pub fn handle_drag(&mut self, ui: &mut egui::Ui, response: Response) {
         if response.dragged_by(PointerButton::Middle) {
             ui.ctx()
                 .output_mut(|o| o.cursor_icon = egui::CursorIcon::Grab);
-            self.state.offset -= response.drag_delta() / self.state.zoom;
+            self.camera.update_offset(response.drag_delta());
         }
     }
     fn draw_canvas(&mut self, ui: &mut egui::Ui) {
         let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::drag());
 
+        self.camera.update_coords(ui.max_rect());
+        //TODO: make a draw_world fn
+        /*for drawable in self.state.objects {
+            if self.state.world_coordinates.contains(drawable.coord)
+                || self
+                    .state
+                    .world_coordinates
+                    .contains(drawable.coord + drawable.size)
+            {
+                drawable.draw();
+            }
+        }*/
         self.state.mouse_pos = ui.input(|i| i.pointer.interact_pos());
-        let rect = response.rect;
 
+        let rect = response.rect;
         self.handle_drag(ui, response);
 
         // Background
@@ -106,29 +110,29 @@ impl App {
         if self.state.debug {
             self.draw_debug_window(painter.ctx());
             if self.state.track_fps {
-                match self.start.elapsed() {
+                match self.state.started_at.elapsed() {
                     Ok(elapsed) => {
-                        let elapsed_millis = elapsed - self.elapsed;
+                        let elapsed_millis = elapsed - self.state.elapsed;
                         if elapsed_millis > Duration::from_millis(100) {
                             let secs = elapsed_millis.as_secs_f64();
-                            self.last_fps = (self.current_fps / secs).floor();
-                            self.current_fps = 0.0;
-                            self.elapsed = elapsed;
+                            self.state.last_fps = (self.state.current_fps / secs).floor();
+                            self.state.current_fps = 0.0;
+                            self.state.elapsed = elapsed;
                         }
-                        self.current_fps += 1.0;
+                        self.state.current_fps += 1.0;
                     }
-                    Err(e) => self.latest_err = e.to_string(),
+                    Err(e) => (),
                 };
             }
         };
     }
 
-    fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
-        let ss = 25.0 * self.state.zoom; //screen spacing - at 1 zoom have a spacing of 25 px
+    fn draw_grid(&self, painter: &egui::Painter, rect: egui::Rect) {
+        let ss = 25.0 * self.camera.zoom; //screen spacing - at 1 zoom have a spacing of 25 px
         let color = Color32::from_rgba_unmultiplied(80, 80, 90, 60);
 
         // Vertical lines
-        let screen_offset = self.screen_offset();
+        let screen_offset = self.camera.screen_offset();
         let mut x = (screen_offset.x % ss + ss) % ss;
         while x < rect.width() {
             painter.line_segment(
@@ -154,15 +158,15 @@ impl App {
             y += ss;
         }
     }
-    fn draw_coords(&self, painter: &egui::Painter, rect: Rect) {
-        let ss = 100.0 * self.state.zoom; //At zoom = 1.0 100px spacing
+    fn draw_coords(&self, painter: &egui::Painter, rect: egui::Rect) {
+        let ss = 100.0 * self.camera.zoom; //At zoom = 1.0 100px spacing
 
-        let screen_offset = self.screen_offset();
+        let screen_offset = self.camera.screen_offset();
         let mut x = (screen_offset.x % ss + ss) % ss - ss;
         while x < rect.width() {
             let mut y = (screen_offset.y % ss + ss) % ss - ss;
             while y < rect.height() {
-                let world_coord = self.coord_to_world_coord(pos2(x, y));
+                let world_coord = self.camera.pos2_to_world_pos2(pos2(x, y));
                 painter.text(
                     pos2(x, y),
                     egui::Align2::LEFT_TOP,
@@ -190,10 +194,16 @@ impl App {
                                 Some(egui::Color32::from_gray(180));
                             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
 
-                            ui.monospace(format!("Elapsed {}", self.elapsed.as_secs()));
+                            ui.monospace(format!("Elapsed {}", self.state.elapsed.as_secs()));
+
+                            ui.monospace(format!(
+                                "World Coordinates Min = {}: Max = {}",
+                                self.camera.coordinates.min(),
+                                self.camera.coordinates.max()
+                            ));
 
                             if let Some(pos) = self.state.mouse_pos {
-                                let world_pos = self.coord_to_world_coord(pos);
+                                let world_pos = self.camera.pos2_to_world_pos2(pos);
                                 ui.monospace(format!(
                                     "Mouse World pos {:.1}:{:.1}",
                                     world_pos.x, world_pos.y
@@ -208,14 +218,13 @@ impl App {
                                 ui.monospace("Mouse not in window");
                             }
 
-                            ui.monospace(format!("Offset {}", self.state.offset));
+                            ui.monospace(format!("Offset {}", self.camera.offset));
+                            ui.monospace(format!("Zoom factor {}", self.camera.zoom));
                             ui.monospace(format!("Show grid {}", self.state.show_grid));
-
-                            ui.monospace(format!("Zoom factor {}", self.state.zoom));
 
                             ui.monospace(format!(
                                 "Pan: ({:.0}, {:.0}) | Middle-drag to pan | FPS {:.0}",
-                                self.state.offset.x, self.state.offset.y, self.last_fps
+                                self.camera.offset.x, self.camera.offset.y, self.state.last_fps
                             ));
                         });
                     });
@@ -229,13 +238,13 @@ impl eframe::App for App {
                 self.reset();
             }
             if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
-                self.toggle_debug();
+                self.state.toggle_debug();
             }
             if !i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
-                self.toggle_grid();
+                self.state.toggle_grid();
             }
             if i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
-                self.toggle_coords();
+                self.state.toggle_coords();
             }
             let scroll = i.raw_scroll_delta.y;
             if scroll != 0.0 {

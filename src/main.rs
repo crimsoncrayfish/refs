@@ -2,6 +2,10 @@ use eframe::egui;
 
 mod app;
 use app::App;
+mod camera;
+mod render;
+mod util;
+mod world;
 
 const APP_NAME: &str = "Refs";
 

@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::util::vec2::Vec2;
+use super::vec2::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Rect {
@@ -205,7 +205,7 @@ impl From<Rect> for egui::Rect {
 
 #[cfg(test)]
 mod test {
-    use crate::util::{rect::Rect, vec2::Vec2};
+    use super::{Rect, Vec2};
 
     #[test]
     fn test_new() {
