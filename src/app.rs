@@ -6,7 +6,7 @@ use crate::{camera::Camera, world::world::World};
 
 pub struct App {
     state: AppState,
-    world: World,
+    _world: World,
     camera: Camera,
 }
 
@@ -56,7 +56,7 @@ impl Default for App {
     fn default() -> Self {
         Self {
             camera: Camera::new(),
-            world: World::new(),
+            _world: World::new(),
             state: AppState::new(),
         }
     }
@@ -121,7 +121,7 @@ impl App {
                         }
                         self.state.current_fps += 1.0;
                     }
-                    Err(e) => (),
+                    Err(_) => (),
                 };
             }
         };

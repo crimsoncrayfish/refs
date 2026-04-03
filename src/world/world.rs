@@ -1,18 +1,18 @@
 use crate::world::drawable::Entity;
 
 pub struct World {
-    drawables: Vec<Entity>,
-    state: State,
+    _drawables: Vec<Entity>,
+    _state: State,
 }
 pub struct State {
-    exists: bool,
+    _exists: bool,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
-            drawables: Vec::new(),
-            state: State { exists: true },
+            _drawables: Vec::new(),
+            _state: State { _exists: true },
         }
     }
 }
