@@ -3,14 +3,17 @@ A pureref clone. Go support pureref (https://www.pureref.com/). Its great
 
 # design
 
-the system will consist of 2 separate entities:
+the system will consist of separate entities:
 - world
+- camera
 - app
+- app_state
+- render functions
 
 # world
 The world will keep track of where entities exist in the world coordinates and how they are scaled/manipulated/stacked inside the world
 
-# app
+# camera
 The app will translate everything to app coordinates from the world state by accounting for offset and zoom. 
 
 ## offset and zoom
@@ -23,3 +26,12 @@ at offset (0, 0) and zoom 1 the world coordinates will overlap exactly with the 
         (coord).Into()+ self.state.offset / self.state.zoom 
     }
 ```
+
+# app
+app will connect the world and the camera with the render functions
+
+# app_state
+app state will keep track of settings and app state like "should the menu show?" etc.
+
+# render functions
+the render functions will do the job of rendering everything that falls within the camera's scope
