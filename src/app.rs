@@ -16,6 +16,7 @@ pub struct AppState {
     elapsed: Duration,
     last_fps: f64,
     current_fps: f64,
+    drawn_entities: i32,
 
     pub track_fps: bool,
     pub debug: bool,
@@ -34,6 +35,7 @@ impl AppState {
             last_fps: 0.0,
             current_fps: 0.0,
             mouse_pos: None,
+            drawn_entities: 0,
         }
     }
     pub fn reset(&mut self) {
@@ -50,6 +52,12 @@ impl AppState {
     }
     pub fn toggle_debug(&mut self) {
         self.debug = !self.debug;
+    }
+    pub fn drawn_entities(&self) -> i32 {
+        self.drawn_entities
+    }
+    pub fn set_drawn_entities(&mut self, count: i32) {
+        self.drawn_entities = count;
     }
     pub fn set_mouse_pos(&mut self, pos: Option<Pos2>) {
         self.mouse_pos = pos
@@ -119,7 +127,7 @@ impl App {
         if self.state.show_coords {
             draw::draw_coords(&painter, rect, &self.camera);
         }
-        draw::draw_world(&painter, &self.world, &self.camera);
+        draw::draw_world(&painter, &self.world, &self.camera, &mut self.state);
 
         if self.state.debug {
             self.state.calculate_fps();

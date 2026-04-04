@@ -8,7 +8,8 @@
 use crate::{app::AppState, camera::Camera, world::world::World};
 use eframe::egui::{self, Color32, Stroke, pos2};
 
-pub fn draw_world(painter: &egui::Painter, world: &World, camera: &Camera) {
+pub fn draw_world(painter: &egui::Painter, world: &World, camera: &Camera, state: &mut AppState) {
+    let mut drawn_entities = 0;
     for element in world.entities() {
         if !camera.coordinates.contains(element.coord) {
             continue;
@@ -18,7 +19,9 @@ pub fn draw_world(painter: &egui::Painter, world: &World, camera: &Camera) {
             10.0,
             Color32::from_rgb(100, 100, 100),
         );
+        drawn_entities += 1;
     }
+    state.set_drawn_entities(drawn_entities);
 }
 
 pub fn draw_debug_window(
@@ -47,6 +50,10 @@ pub fn draw_debug_window(
                             camera.coordinates.max()
                         ));
                         ui.monospace(format!("Entity Count {}", world.entities().iter().count()));
+                        ui.monospace(format!(
+                            "Drawn Entitiy Count {}",
+                            app_state.drawn_entities()
+                        ));
 
                         if let Some(pos) = app_state.mouse_pos() {
                             let world_pos = camera.pos2_to_world_pos2(pos);
