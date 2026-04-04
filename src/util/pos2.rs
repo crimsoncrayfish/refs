@@ -1,4 +1,7 @@
-use std::ops::{Add, Sub};
+use std::{
+    fmt,
+    ops::{Add, Sub},
+};
 
 use eframe::egui;
 
@@ -39,6 +42,22 @@ impl Pos2 {
         Self {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
+        }
+    }
+}
+
+impl fmt::Display for Pos2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(x:{}, y:{})", self.x, self.y)
+    }
+}
+impl Sub<Vec2> for Pos2 {
+    type Output = Pos2;
+
+    fn sub(self, other: Vec2) -> Self::Output {
+        Self::Output {
+            x: self.x - other.x,
+            y: self.y - other.y,
         }
     }
 }

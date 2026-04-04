@@ -3,7 +3,7 @@ use eframe::egui;
 mod app;
 use app::App;
 mod camera;
-mod render;
+mod draw;
 mod util;
 mod world;
 

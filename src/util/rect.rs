@@ -1,25 +1,27 @@
 use eframe::egui;
 
+use crate::util::pos2::Pos2;
+
 use super::vec2::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Rect {
-    pub pos: Vec2,
+    pub pos: Pos2,
     pub size: Vec2,
 }
 impl Rect {
-    pub fn new(pos: Vec2, size: Vec2) -> Self {
+    pub fn new(pos: Pos2, size: Vec2) -> Self {
         Self { pos, size }
     }
     pub fn from_xywh(x: f32, y: f32, w: f32, h: f32) -> Self {
         assert!(w > 0.0);
         assert!(h > 0.0);
         Self {
-            pos: Vec2::new(x, y),
+            pos: Pos2::new(x, y),
             size: Vec2::new(w, h),
         }
     }
-    pub fn from_min_max(min: Vec2, max: Vec2) -> Self {
+    pub fn from_min_max(min: Pos2, max: Pos2) -> Self {
         assert!(min.x <= max.x);
         assert!(min.y <= max.y);
         Self {
@@ -27,20 +29,20 @@ impl Rect {
             size: max - min,
         }
     }
-    pub fn from_center_size(center: Vec2, size: Vec2) -> Self {
+    pub fn from_center_size(center: Pos2, size: Vec2) -> Self {
         Self {
             pos: center - size / 2.0,
             size,
         }
     }
-    pub fn from_two_points(p1: Vec2, p2: Vec2) -> Self {
+    pub fn from_two_points(p1: Pos2, p2: Pos2) -> Self {
         let min = p1.min(p2);
         let max = p1.max(p2);
         Self::from_min_max(min, max)
     }
     pub fn zero() -> Self {
         Self {
-            pos: Vec2::zero(),
+            pos: Pos2::zero(),
             size: Vec2::zero(),
         }
     }
@@ -68,29 +70,29 @@ impl Rect {
     pub fn height(&self) -> f32 {
         self.size.y
     }
-    pub fn min(&self) -> Vec2 {
+    pub fn min(&self) -> Pos2 {
         self.pos
     }
-    pub fn max(&self) -> Vec2 {
+    pub fn max(&self) -> Pos2 {
         self.pos + self.size
     }
-    pub fn center(&self) -> Vec2 {
+    pub fn center(&self) -> Pos2 {
         self.pos + self.size * 0.5
     }
-    pub fn top_right(&self) -> Vec2 {
-        Vec2::new(self.right(), self.top())
+    pub fn top_right(&self) -> Pos2 {
+        Pos2::new(self.right(), self.top())
     }
-    pub fn top_left(&self) -> Vec2 {
-        Vec2::new(self.left(), self.top())
+    pub fn top_left(&self) -> Pos2 {
+        Pos2::new(self.left(), self.top())
     }
-    pub fn bottom_right(&self) -> Vec2 {
-        Vec2::new(self.right(), self.bottom())
+    pub fn bottom_right(&self) -> Pos2 {
+        Pos2::new(self.right(), self.bottom())
     }
-    pub fn bottom_left(&self) -> Vec2 {
-        Vec2::new(self.left(), self.bottom())
+    pub fn bottom_left(&self) -> Pos2 {
+        Pos2::new(self.left(), self.bottom())
     }
 
-    pub fn contains(&self, point: Vec2) -> bool {
+    pub fn contains(&self, point: Pos2) -> bool {
         point.x >= self.left()
             && point.x <= self.right()
             && point.y >= self.top()
@@ -158,14 +160,14 @@ impl Rect {
         }
     }
     /// Clamp a point to be within the rect
-    pub fn clamp_point(&self, point: Vec2) -> Vec2 {
-        Vec2 {
+    pub fn clamp_point(&self, point: Pos2) -> Pos2 {
+        Pos2 {
             x: point.x.clamp(self.left(), self.right()),
             y: point.y.clamp(self.top(), self.bottom()),
         }
     }
-    pub fn closest_edge_point(&self, point: Vec2) -> Vec2 {
-        let closest_point: Vec2;
+    pub fn closest_edge_point(&self, point: Pos2) -> Pos2 {
+        let closest_point: Pos2;
         if self.contains(point) {
             let to_left = (point.x - self.left()).abs();
             let to_right = (point.x - self.right()).abs();
@@ -173,13 +175,13 @@ impl Rect {
             let to_bottom = (point.y - self.bottom()).abs();
             let min = to_left.min(to_right).min(to_bottom).min(to_top);
             if min == to_left {
-                closest_point = Vec2::new(self.left(), point.y);
+                closest_point = Pos2::new(self.left(), point.y);
             } else if min == to_right {
-                closest_point = Vec2::new(self.right(), point.y);
+                closest_point = Pos2::new(self.right(), point.y);
             } else if min == to_top {
-                closest_point = Vec2::new(point.x, self.top());
+                closest_point = Pos2::new(point.x, self.top());
             } else {
-                closest_point = Vec2::new(point.x, self.bottom());
+                closest_point = Pos2::new(point.x, self.bottom());
             }
         } else {
             closest_point = self.clamp_point(point);
@@ -205,11 +207,13 @@ impl From<Rect> for egui::Rect {
 
 #[cfg(test)]
 mod test {
+    use crate::util::pos2::Pos2;
+
     use super::{Rect, Vec2};
 
     #[test]
     fn test_new() {
-        let r = Rect::new(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::new(Pos2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
         assert_eq!(r.pos.x, 1.0);
         assert_eq!(r.pos.y, 2.0);
         assert_eq!(r.size.x, 4.0);
@@ -225,7 +229,7 @@ mod test {
     }
     #[test]
     fn test_from_min_max() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(5.0, 7.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(5.0, 7.0));
         assert_eq!(r.pos.x, 1.0);
         assert_eq!(r.pos.y, 2.0);
         assert_eq!(r.size.x, 4.0);
@@ -234,7 +238,7 @@ mod test {
     #[test]
     fn test_from_center_size() {
         let r = Rect::from_center_size(
-            Vec2::new(1.0, 2.0).lerp(Vec2::new(5.0, 7.0), 0.5),
+            Pos2::new(1.0, 2.0).lerp(Pos2::new(5.0, 7.0), 0.5),
             Vec2::new(4.0, 5.0),
         );
         assert_eq!(r.pos.x, 1.0);
@@ -244,7 +248,7 @@ mod test {
     }
     #[test]
     fn test_from_two_points() {
-        let r = Rect::from_two_points(Vec2::new(4.0, 5.0), Vec2::new(1.0, 2.0));
+        let r = Rect::from_two_points(Pos2::new(4.0, 5.0), Pos2::new(1.0, 2.0));
         assert_eq!(r.left(), 1.0);
         assert_eq!(r.top(), 2.0);
         assert_eq!(r.right(), 4.0);
@@ -260,7 +264,7 @@ mod test {
     }
     #[test]
     fn test_xy_left_right_top_bottom() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(1.0, r.x());
         assert_eq!(2.0, r.y());
         assert_eq!(1.0, r.left());
@@ -270,134 +274,134 @@ mod test {
     }
     #[test]
     fn test_vec2s() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        assert_eq!(Vec2::new(1.0, 2.0), r.min());
-        assert_eq!(Vec2::new(4.0, 5.0), r.max());
-        assert_eq!(Vec2::new(2.5, 3.5), r.center());
-        assert_eq!(Vec2::new(4.0, 2.0), r.top_right());
-        assert_eq!(Vec2::new(1.0, 2.0), r.top_left());
-        assert_eq!(Vec2::new(1.0, 5.0), r.bottom_left());
-        assert_eq!(Vec2::new(4.0, 5.0), r.bottom_right());
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        assert_eq!(Pos2::new(1.0, 2.0), r.min());
+        assert_eq!(Pos2::new(4.0, 5.0), r.max());
+        assert_eq!(Pos2::new(2.5, 3.5), r.center());
+        assert_eq!(Pos2::new(4.0, 2.0), r.top_right());
+        assert_eq!(Pos2::new(1.0, 2.0), r.top_left());
+        assert_eq!(Pos2::new(1.0, 5.0), r.bottom_left());
+        assert_eq!(Pos2::new(4.0, 5.0), r.bottom_right());
     }
     #[test]
     fn test_contains() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        assert!(r.contains(Vec2::new(3.0, 3.0)));
-        assert!(!r.contains(Vec2::new(9.0, 0.0)));
-        assert!(!r.contains(Vec2::new(9.0, 9.0)));
-        assert!(!r.contains(Vec2::new(0.0, 0.0)));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        assert!(r.contains(Pos2::new(3.0, 3.0)));
+        assert!(!r.contains(Pos2::new(9.0, 0.0)));
+        assert!(!r.contains(Pos2::new(9.0, 9.0)));
+        assert!(!r.contains(Pos2::new(0.0, 0.0)));
     }
     #[test]
     fn test_intersects() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        let r_inside = Rect::from_min_max(Vec2::new(2.0, 3.0), Vec2::new(5.0, 6.0));
-        let r_not = Rect::from_min_max(Vec2::new(10.0, 20.0), Vec2::new(40.0, 50.0));
-        let r_touch = Rect::from_min_max(Vec2::new(4.0, 5.0), Vec2::new(40.0, 50.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        let r_inside = Rect::from_min_max(Pos2::new(2.0, 3.0), Pos2::new(5.0, 6.0));
+        let r_not = Rect::from_min_max(Pos2::new(10.0, 20.0), Pos2::new(40.0, 50.0));
+        let r_touch = Rect::from_min_max(Pos2::new(4.0, 5.0), Pos2::new(40.0, 50.0));
         assert!(r.intersects(r_inside));
         assert!(r.intersects(r_touch));
         assert!(!r.intersects(r_not));
     }
     #[test]
     fn test_intersection() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        let r_inside = Rect::from_min_max(Vec2::new(2.0, 3.0), Vec2::new(5.0, 6.0));
-        let r_not = Rect::from_min_max(Vec2::new(10.0, 20.0), Vec2::new(40.0, 50.0));
-        let r_touch = Rect::from_min_max(Vec2::new(4.0, 5.0), Vec2::new(40.0, 50.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        let r_inside = Rect::from_min_max(Pos2::new(2.0, 3.0), Pos2::new(5.0, 6.0));
+        let r_not = Rect::from_min_max(Pos2::new(10.0, 20.0), Pos2::new(40.0, 50.0));
+        let r_touch = Rect::from_min_max(Pos2::new(4.0, 5.0), Pos2::new(40.0, 50.0));
         assert_eq!(
-            Some(Rect::from_min_max(Vec2::new(2.0, 3.0), Vec2::new(4.0, 5.0))),
+            Some(Rect::from_min_max(Pos2::new(2.0, 3.0), Pos2::new(4.0, 5.0))),
             r.intersection(r_inside)
         );
         assert_eq!(
-            Some(Rect::from_center_size(Vec2::new(4.0, 5.0), Vec2::zero())),
+            Some(Rect::from_center_size(Pos2::new(4.0, 5.0), Vec2::zero())),
             r.intersection(r_touch)
         );
         assert_eq!(None, r.intersection(r_not));
     }
     #[test]
     fn test_bounding() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        let r2 = Rect::from_min_max(Vec2::new(10.0, 20.0), Vec2::new(40.0, 50.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        let r2 = Rect::from_min_max(Pos2::new(10.0, 20.0), Pos2::new(40.0, 50.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(40.0, 50.0)),
+            Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(40.0, 50.0)),
             r.bounding(r2)
         );
-        let r3 = Rect::from_min_max(Vec2::new(2.0, 3.0), Vec2::new(6.0, 7.0));
+        let r3 = Rect::from_min_max(Pos2::new(2.0, 3.0), Pos2::new(6.0, 7.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(6.0, 7.0)),
+            Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(6.0, 7.0)),
             r.bounding(r3)
         );
     }
     #[test]
     fn test_expand() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(0.0, 1.0), Vec2::new(5.0, 6.0)),
+            Rect::from_min_max(Pos2::new(0.0, 1.0), Pos2::new(5.0, 6.0)),
             r.expand(1.0)
         );
     }
     #[test]
     fn test_shrink() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(2.0, 3.0), Vec2::new(3.0, 4.0)),
+            Rect::from_min_max(Pos2::new(2.0, 3.0), Pos2::new(3.0, 4.0)),
             r.shrink(1.0)
         );
     }
     #[test]
     fn test_translate() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(2.0, 4.0), Vec2::new(5.0, 7.0)),
+            Rect::from_min_max(Pos2::new(2.0, 4.0), Pos2::new(5.0, 7.0)),
             r.translate(Vec2::new(1.0, 2.0))
         );
     }
     #[test]
     fn test_scale_from_center() {
-        let r0 = Rect::from_center_size(Vec2::new(1.0, 1.0), Vec2::new(4.0, 5.0));
+        let r0 = Rect::from_center_size(Pos2::new(1.0, 1.0), Vec2::new(4.0, 5.0));
         assert_eq!(
-            Rect::from_center_size(Vec2::new(1.0, 1.0), Vec2::new(8.0, 10.0)),
+            Rect::from_center_size(Pos2::new(1.0, 1.0), Vec2::new(8.0, 10.0)),
             r0.scale_from_center(2.0)
         );
 
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(
-            Rect::from_min_max(Vec2::new(-0.5, 0.5), Vec2::new(5.5, 6.5)),
+            Rect::from_min_max(Pos2::new(-0.5, 0.5), Pos2::new(5.5, 6.5)),
             r.scale_from_center(2.0)
         );
         assert_eq!(
-            Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0)),
+            Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0)),
             r.scale_from_center(1.0)
         );
         assert_eq!(
-            Rect::from_min_max(Vec2::new(1.75, 2.75), Vec2::new(3.25, 4.25)),
+            Rect::from_min_max(Pos2::new(1.75, 2.75), Pos2::new(3.25, 4.25)),
             r.scale_from_center(0.5)
         );
     }
     #[test]
     #[should_panic(expected = "assertion failed: scale > 0.0")]
     fn test_scale_from_center_negative_panics() {
-        let rect = Rect::from_center_size(Vec2::new(5.0, 5.0), Vec2::new(10.0, 10.0));
+        let rect = Rect::from_center_size(Pos2::new(5.0, 5.0), Vec2::new(10.0, 10.0));
         rect.scale_from_center(-1.0);
     }
     #[test]
     fn test_is_valid() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert!(r.is_valid());
-        let r2 = Rect::new(Vec2::new(1.0, 2.0), Vec2::new(-4.0, -5.0));
+        let r2 = Rect::new(Pos2::new(1.0, 2.0), Vec2::new(-4.0, -5.0));
         assert!(!r2.is_valid())
     }
     #[test]
     fn test_area() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(9.0, r.area());
     }
     #[test]
     fn test_aspect_ratio() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(1.0, r.aspect_ratio());
-        let r = Rect::from_min_max(Vec2::new(1.0, 4.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 4.0), Pos2::new(4.0, 5.0));
         assert_eq!(3.0, r.aspect_ratio());
-        let r = Rect::from_min_max(Vec2::new(4.0, 2.0), Vec2::new(5.0, 4.0));
+        let r = Rect::from_min_max(Pos2::new(4.0, 2.0), Pos2::new(5.0, 4.0));
         assert_eq!(0.5, r.aspect_ratio());
     }
     #[test]
@@ -410,65 +414,65 @@ mod test {
         //5 x x x x .
         //6   .
         //
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
-        assert_eq!(Vec2::new(2.0, 3.0), r.clamp_point(Vec2::new(2.0, 3.0)));
-        assert_eq!(Vec2::new(1.0, 2.0), r.clamp_point(Vec2::new(0.0, 0.0)));
-        assert_eq!(Vec2::new(1.0, 2.0), r.clamp_point(Vec2::new(0.0, 1.0)));
-        assert_eq!(Vec2::new(1.0, 2.0), r.clamp_point(Vec2::new(1.0, 1.0)));
-        assert_eq!(Vec2::new(2.5, 2.0), r.clamp_point(Vec2::new(2.5, 1.0)),);
-        assert_eq!(Vec2::new(4.0, 2.0), r.clamp_point(Vec2::new(5.0, 1.0)),);
-        assert_eq!(Vec2::new(1.0, 3.5), r.clamp_point(Vec2::new(0.0, 3.5)),);
-        assert_eq!(Vec2::new(4.0, 3.5), r.clamp_point(Vec2::new(5.0, 3.5)),);
-        assert_eq!(Vec2::new(1.0, 5.0), r.clamp_point(Vec2::new(0.0, 6.0)),);
-        assert_eq!(Vec2::new(2.5, 5.0), r.clamp_point(Vec2::new(2.5, 6.0)),);
-        assert_eq!(Vec2::new(4.0, 5.0), r.clamp_point(Vec2::new(5.0, 6.0)),);
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
+        assert_eq!(Pos2::new(2.0, 3.0), r.clamp_point(Pos2::new(2.0, 3.0)));
+        assert_eq!(Pos2::new(1.0, 2.0), r.clamp_point(Pos2::new(0.0, 0.0)));
+        assert_eq!(Pos2::new(1.0, 2.0), r.clamp_point(Pos2::new(0.0, 1.0)));
+        assert_eq!(Pos2::new(1.0, 2.0), r.clamp_point(Pos2::new(1.0, 1.0)));
+        assert_eq!(Pos2::new(2.5, 2.0), r.clamp_point(Pos2::new(2.5, 1.0)),);
+        assert_eq!(Pos2::new(4.0, 2.0), r.clamp_point(Pos2::new(5.0, 1.0)),);
+        assert_eq!(Pos2::new(1.0, 3.5), r.clamp_point(Pos2::new(0.0, 3.5)),);
+        assert_eq!(Pos2::new(4.0, 3.5), r.clamp_point(Pos2::new(5.0, 3.5)),);
+        assert_eq!(Pos2::new(1.0, 5.0), r.clamp_point(Pos2::new(0.0, 6.0)),);
+        assert_eq!(Pos2::new(2.5, 5.0), r.clamp_point(Pos2::new(2.5, 6.0)),);
+        assert_eq!(Pos2::new(4.0, 5.0), r.clamp_point(Pos2::new(5.0, 6.0)),);
     }
     #[test]
     fn test_closest_edge_point() {
-        let r = Rect::from_min_max(Vec2::new(1.0, 2.0), Vec2::new(4.0, 5.0));
+        let r = Rect::from_min_max(Pos2::new(1.0, 2.0), Pos2::new(4.0, 5.0));
         assert_eq!(
-            Vec2::new(1.0, 3.0),
-            r.closest_edge_point(Vec2::new(2.0, 3.0))
+            Pos2::new(1.0, 3.0),
+            r.closest_edge_point(Pos2::new(2.0, 3.0))
         );
         assert_eq!(
-            Vec2::new(1.0, 2.0),
-            r.closest_edge_point(Vec2::new(0.0, 0.0))
+            Pos2::new(1.0, 2.0),
+            r.closest_edge_point(Pos2::new(0.0, 0.0))
         );
         assert_eq!(
-            Vec2::new(1.0, 2.0),
-            r.closest_edge_point(Vec2::new(0.0, 1.0))
+            Pos2::new(1.0, 2.0),
+            r.closest_edge_point(Pos2::new(0.0, 1.0))
         );
         assert_eq!(
-            Vec2::new(1.0, 2.0),
-            r.closest_edge_point(Vec2::new(1.0, 1.0))
+            Pos2::new(1.0, 2.0),
+            r.closest_edge_point(Pos2::new(1.0, 1.0))
         );
         assert_eq!(
-            Vec2::new(2.5, 2.0),
-            r.closest_edge_point(Vec2::new(2.5, 1.0)),
+            Pos2::new(2.5, 2.0),
+            r.closest_edge_point(Pos2::new(2.5, 1.0)),
         );
         assert_eq!(
-            Vec2::new(4.0, 2.0),
-            r.closest_edge_point(Vec2::new(5.0, 1.0)),
+            Pos2::new(4.0, 2.0),
+            r.closest_edge_point(Pos2::new(5.0, 1.0)),
         );
         assert_eq!(
-            Vec2::new(1.0, 3.5),
-            r.closest_edge_point(Vec2::new(0.0, 3.5)),
+            Pos2::new(1.0, 3.5),
+            r.closest_edge_point(Pos2::new(0.0, 3.5)),
         );
         assert_eq!(
-            Vec2::new(4.0, 3.5),
-            r.closest_edge_point(Vec2::new(5.0, 3.5)),
+            Pos2::new(4.0, 3.5),
+            r.closest_edge_point(Pos2::new(5.0, 3.5)),
         );
         assert_eq!(
-            Vec2::new(1.0, 5.0),
-            r.closest_edge_point(Vec2::new(0.0, 6.0)),
+            Pos2::new(1.0, 5.0),
+            r.closest_edge_point(Pos2::new(0.0, 6.0)),
         );
         assert_eq!(
-            Vec2::new(2.5, 5.0),
-            r.closest_edge_point(Vec2::new(2.5, 6.0)),
+            Pos2::new(2.5, 5.0),
+            r.closest_edge_point(Pos2::new(2.5, 6.0)),
         );
         assert_eq!(
-            Vec2::new(4.0, 5.0),
-            r.closest_edge_point(Vec2::new(5.0, 6.0)),
+            Pos2::new(4.0, 5.0),
+            r.closest_edge_point(Pos2::new(5.0, 6.0)),
         );
     }
 }
