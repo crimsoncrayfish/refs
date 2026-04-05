@@ -18,6 +18,7 @@ pub struct AppState {
     current_fps: f64,
     drawn_entities: i32,
 
+    pub is_insert: bool,
     pub track_fps: bool,
     pub allow_inputs: bool,
     pub debug: bool,
@@ -29,6 +30,7 @@ impl AppState {
         Self {
             started_at: SystemTime::now(),
             elapsed: Duration::from_secs(0),
+            is_insert: false,
             track_fps: true,
             show_coords: false,
             show_grid: true,
@@ -41,10 +43,14 @@ impl AppState {
         }
     }
     pub fn reset(&mut self) {
+        self.is_insert = false;
         self.show_coords = false;
         self.show_grid = true;
         self.track_fps = false;
         self.debug = false;
+    }
+    pub fn toggle_insert(&mut self) {
+        self.is_insert = !self.is_insert;
     }
     pub fn toggle_grid(&mut self) {
         self.show_grid = !self.show_grid;
@@ -147,12 +153,13 @@ impl App {
     }
     fn handle_canvas_response(&mut self, ui: &egui::Ui, response: &Response) {
         let ctrl = ui.input(|i| i.modifiers.ctrl);
+        let insert = self.state.is_insert;
         if response.dragged_by(PointerButton::Middle) {
             ui.ctx()
                 .output_mut(|o| o.cursor_icon = egui::CursorIcon::Grab);
             self.camera.update_offset(response.drag_delta());
         }
-        if ctrl && response.contains_pointer() {
+        if insert && response.contains_pointer() {
             if ui.input(|i| i.pointer.primary_pressed()) {
                 if let Some(mouse_pos) = self.state.mouse_pos() {
                     self.world
@@ -160,8 +167,20 @@ impl App {
                 }
             }
         }
-        if !ctrl && response.contains_pointer() {
+        if !insert && response.clicked() {
+            if !ctrl {
+                self.world.clear_selected();
+            }
+            if let Some(mouse_pos) = self.state.mouse_pos() {
+                self.world
+                    .select_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos));
+            }
+        }
+        if !insert && response.contains_pointer() {
             if ui.input(|i| i.pointer.primary_pressed()) {
+                if !ctrl {
+                    self.world.clear_selected();
+                }
                 if let Some(mouse_pos) = self.state.mouse_pos() {
                     self.world
                         .select_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos));
@@ -169,33 +188,35 @@ impl App {
             }
         }
         if response.dragged_by(PointerButton::Primary) {
-            if let Some(entity) = self.world.selected_entity() {
-                entity.move_by(self.camera.vec2_to_world_vec2(response.drag_delta()));
-            }
+            self.world
+                .selected_entities()
+                .iter_mut()
+                .for_each(|e| e.move_by(self.camera.vec2_to_world_vec2(response.drag_delta())));
         }
     }
     fn handle_global_inputs(&mut self, i: &InputState) {
+        if i.raw_scroll_delta.y != 0.0 {
+            self.handle_scroll(i.raw_scroll_delta.y, self.state.mouse_pos);
+        }
+    }
+    fn handle_global_inputs_always(&mut self, i: &InputState) {
+        if i.key_pressed(egui::Key::I) {
+            self.state.toggle_insert();
+        }
         if !i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
             self.state.toggle_grid();
         }
         if i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
             self.state.toggle_coords();
         }
-        if i.raw_scroll_delta.y != 0.0 {
-            self.handle_scroll(i.raw_scroll_delta.y, self.state.mouse_pos);
-        }
-    }
-    fn handle_global_inputs_always(&mut self, i: &InputState) {
         if !i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
             self.reset();
         }
         if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
             self.state.toggle_debug();
         }
-        if i.key_pressed(egui::Key::Delete)
-            && let Some(selected_id) = self.world.selected_id()
-        {
-            self.world.delete_entity(&selected_id);
+        if i.key_pressed(egui::Key::Delete) && self.world.selected_ids().len() > 0 {
+            self.world.delete_selected();
         }
     }
 }

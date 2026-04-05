@@ -47,9 +47,6 @@ impl Entity {
     pub fn contains_pos(&self, pos: Pos2) -> bool {
         self.to_rect().contains(pos)
     }
-    pub fn move_to(&mut self, pos: Pos2) {
-        self.coord = pos;
-    }
     pub fn move_by(&mut self, delta: Vec2) {
         self.coord += delta;
     }

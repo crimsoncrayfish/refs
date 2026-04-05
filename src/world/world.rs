@@ -8,7 +8,7 @@ use crate::{
 pub struct World {
     entities: HashMap<EntityId, Entity>,
     _state: State,
-    selected: Option<EntityId>,
+    selected: Vec<EntityId>,
     next_entity_id: EntityId,
 }
 pub struct State {
@@ -20,7 +20,7 @@ impl World {
         Self {
             entities: HashMap::new(),
             _state: State { _exists: true },
-            selected: None,
+            selected: Vec::new(),
             next_entity_id: EntityId::new(1),
         }
     }
@@ -32,25 +32,33 @@ impl World {
     pub fn entities(&self) -> &HashMap<EntityId, Entity> {
         &self.entities
     }
+    pub fn clear_selected(&mut self) {
+        self.selected.clear();
+    }
     pub fn select_top_entity_at_pos(&mut self, pos: Pos2) {
         let clicked = self
             .entities
             .iter()
             .filter(|(_, e)| e.contains_pos(pos))
             .max_by_key(|(_, e)| e.z_index);
-        self.selected = clicked.map(|(id, _)| *id);
-    }
-    pub fn selected_id(&self) -> Option<EntityId> {
-        self.selected
-    }
-    pub fn selected_entity(&mut self) -> Option<&mut Entity> {
-        if let Some(selected_id) = self.selected {
-            self.entities.get_mut(&selected_id)
-        } else {
-            None
+        if let Some((&el_id, _)) = clicked {
+            self.selected.push(el_id);
         }
     }
-    pub fn delete_entity(&mut self, entity_id: &EntityId) {
-        self.entities.remove(entity_id);
+    pub fn selected_ids(&self) -> &Vec<EntityId> {
+        &self.selected
+    }
+    pub fn selected_entities(&mut self) -> Vec<&mut Entity> {
+        self.entities
+            .iter_mut()
+            .filter(|(id, _)| self.selected.contains(id))
+            .map(|(_, e)| e)
+            .collect()
+    }
+    pub fn delete_selected(&mut self) {
+        for id in self.selected.iter() {
+            self.entities.remove(&id);
+        }
+        self.selected.clear();
     }
 }

@@ -16,7 +16,7 @@ pub fn draw_world(painter: &egui::Painter, world: &World, camera: &Camera, state
             painter,
             camera.world_pos2_to_pos2(element.coord),
             camera.zoom(),
-            Some(*id) == world.selected_id(),
+            world.selected_ids().contains(id),
         );
         drawn_entities += 1;
     }
@@ -70,7 +70,7 @@ pub fn draw_debug_window(
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
                     for (id, entity) in world.entities() {
-                        let is_selected = world.selected_id() == Some(*id);
+                        let is_selected = world.selected_ids().contains(id);
 
                         let header_text = if is_selected {
                             format!("▶ Entity {:?}", id)
