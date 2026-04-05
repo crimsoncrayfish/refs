@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    ops::{Add, Sub},
+    ops::{Add, AddAssign, Sub},
 };
 
 use eframe::egui;
@@ -78,6 +78,12 @@ impl Add<Vec2> for Pos2 {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
         }
+    }
+}
+impl AddAssign<Vec2> for Pos2 {
+    fn add_assign(&mut self, rhs: Vec2) {
+        self.x += rhs.x;
+        self.y += rhs.y;
     }
 }
 

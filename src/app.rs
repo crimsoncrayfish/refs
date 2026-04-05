@@ -19,6 +19,7 @@ pub struct AppState {
     drawn_entities: i32,
 
     pub track_fps: bool,
+    pub allow_inputs: bool,
     pub debug: bool,
     pub show_coords: bool,
     pub show_grid: bool,
@@ -32,6 +33,7 @@ impl AppState {
             show_coords: false,
             show_grid: true,
             debug: false,
+            allow_inputs: true,
             last_fps: 0.0,
             current_fps: 0.0,
             mouse_pos: None,
@@ -110,7 +112,6 @@ impl App {
     }
     fn draw_canvas(&mut self, ui: &mut egui::Ui) {
         let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::all());
-        self.handle_canvas_response(ui, &response);
 
         self.camera.update_coords(ui.max_rect());
         self.state
@@ -129,10 +130,20 @@ impl App {
         }
         draw::draw_world(&painter, &self.world, &self.camera, &mut self.state);
 
+        self.state.allow_inputs = true;
         if self.state.debug {
             self.state.calculate_fps();
-            draw::draw_debug_window(painter.ctx(), &self.state, &self.camera, &self.world);
+            if let Some(debug_response) =
+                draw::draw_debug_window(painter.ctx(), &self.state, &self.camera, &self.world)
+            {
+                if debug_response.contains_pointer() {
+                    self.state.allow_inputs = false;
+                }
+            }
         };
+        if self.state.allow_inputs {
+            self.handle_canvas_response(ui, &response);
+        }
     }
     fn handle_canvas_response(&mut self, ui: &egui::Ui, response: &Response) {
         let ctrl = ui.input(|i| i.modifiers.ctrl);
@@ -149,14 +160,21 @@ impl App {
                 }
             }
         }
+        if !ctrl && response.contains_pointer() {
+            if ui.input(|i| i.pointer.primary_pressed()) {
+                if let Some(mouse_pos) = self.state.mouse_pos() {
+                    self.world
+                        .select_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos));
+                }
+            }
+        }
+        if response.dragged_by(PointerButton::Primary) {
+            if let Some(entity) = self.world.selected_entity() {
+                entity.move_by(self.camera.vec2_to_world_vec2(response.drag_delta()));
+            }
+        }
     }
     fn handle_global_inputs(&mut self, i: &InputState) {
-        if !i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
-            self.reset();
-        }
-        if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
-            self.state.toggle_debug();
-        }
         if !i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
             self.state.toggle_grid();
         }
@@ -167,11 +185,22 @@ impl App {
             self.handle_scroll(i.raw_scroll_delta.y, self.state.mouse_pos);
         }
     }
+    fn handle_global_inputs_always(&mut self, i: &InputState) {
+        if !i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
+            self.reset();
+        }
+        if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
+            self.state.toggle_debug();
+        }
+    }
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.input(|i| {
-            self.handle_global_inputs(i);
+            if self.state.allow_inputs {
+                self.handle_global_inputs(i);
+            }
+            self.handle_global_inputs_always(i);
         });
         ctx.request_repaint();
         egui::CentralPanel::default()

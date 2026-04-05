@@ -35,6 +35,9 @@ impl Camera {
     pub fn pos2_to_world_pos2(&self, coord: egui::Pos2) -> Pos2 {
         Into::<Pos2>::into(coord / self.zoom) + self.offset
     }
+    pub fn vec2_to_world_vec2(&self, vec: egui::Vec2) -> Vec2 {
+        Into::<Vec2>::into(vec / self.zoom)
+    }
     pub fn world_pos2_to_pos2(&self, coord: Pos2) -> egui::Pos2 {
         Into::<egui::Pos2>::into(coord - self.offset) * self.zoom
     }
