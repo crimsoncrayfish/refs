@@ -36,21 +36,17 @@ impl World {
         self.selected.clear();
     }
     pub fn select_entity(&mut self, id: EntityId) {
+        assert!(!self.selected.contains(&id));
         self.selected.push(id);
     }
-    pub fn find_top_entity_at_pos(&mut self, pos: Pos2) -> Option<EntityId> {
-        let clicked = self
-            .entities
+    pub fn find_top_entity_at_pos(&self, pos: Pos2) -> Option<EntityId> {
+        self.entities
             .iter()
             .filter(|(_, e)| e.contains_pos(pos))
-            .max_by_key(|(_, e)| e.z_index);
-        if let Some((&el_id, _)) = clicked {
-            Some(el_id)
-        } else {
-            None
-        }
+            .max_by_key(|(_, e)| e.z_index)
+            .map(|(&id, _)| id)
     }
-    pub fn selected_ids(&self) -> &Vec<EntityId> {
+    pub fn selected_ids(&self) -> &[EntityId] {
         &self.selected
     }
     pub fn selected_entities(&mut self) -> Vec<&mut Entity> {
@@ -62,7 +58,7 @@ impl World {
     }
     pub fn delete_selected(&mut self) {
         for id in self.selected.iter() {
-            self.entities.remove(&id);
+            self.entities.remove(id);
         }
         self.selected.clear();
     }

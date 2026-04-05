@@ -21,6 +21,13 @@ pub struct Entity {
 }
 
 impl Entity {
+    pub fn new_at_pos(pos: Pos2) -> Self {
+        Self {
+            coord: pos,
+            _size: Rect::zero(),
+            z_index: 0,
+        }
+    }
     pub fn draw_at(&self, painter: &egui::Painter, pos: egui::Pos2, zoom: f32, selected: bool) {
         let radius = 10.0 * zoom;
         let color = if selected {
@@ -33,13 +40,6 @@ impl Entity {
             draw_selection_box(painter, rect);
         }
         painter.circle_filled(pos, radius, color);
-    }
-    pub fn new_at_pos(pos: Pos2) -> Self {
-        Self {
-            coord: pos,
-            _size: Rect::zero(),
-            z_index: 0,
-        }
     }
     fn to_rect(&self) -> Rect {
         Rect::from_center_size(self.coord, Vec2::splat(20.0))
