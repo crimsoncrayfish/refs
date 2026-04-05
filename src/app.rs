@@ -147,6 +147,7 @@ impl App {
                 }
             }
         };
+        draw::draw_state(painter.ctx(), &self.state);
         if self.state.allow_inputs {
             self.handle_canvas_response(ui, &response);
         }
@@ -167,23 +168,32 @@ impl App {
                 }
             }
         }
+        // TODO: Some janky sht here
         if !insert && response.clicked() {
             if !ctrl {
                 self.world.clear_selected();
             }
             if let Some(mouse_pos) = self.state.mouse_pos() {
-                self.world
-                    .select_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos));
+                if let Some(id) = self
+                    .world
+                    .find_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos))
+                {
+                    self.world.select_entity(id);
+                }
             }
         }
         if !insert && response.contains_pointer() {
             if ui.input(|i| i.pointer.primary_pressed()) {
-                if !ctrl {
-                    self.world.clear_selected();
-                }
                 if let Some(mouse_pos) = self.state.mouse_pos() {
-                    self.world
-                        .select_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos));
+                    if let Some(id) = self
+                        .world
+                        .find_top_entity_at_pos(self.camera.pos2_to_world_pos2(mouse_pos))
+                    {
+                        if !ctrl && !self.world.selected_ids().contains(&id) {
+                            self.world.clear_selected();
+                        }
+                        self.world.select_entity(id);
+                    }
                 }
             }
         }

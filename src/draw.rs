@@ -29,14 +29,13 @@ pub fn draw_debug_window(
     camera: &Camera,
     world: &World,
 ) -> Option<Response> {
-    let stuff = egui::Window::new("🪲 Debug Inspector")
+    let stuff = egui::Window::new("Debug Inspector")
         .default_pos(egui::pos2(10.0, 10.0))
         .resizable(true)
         .show(ctx, |ui| {
             ui.style_mut().override_text_style = Some(egui::TextStyle::Monospace);
 
-            // --- SECTION 1: SYSTEM STATS ---
-            egui::CollapsingHeader::new("📊 System Stats")
+            egui::CollapsingHeader::new("System Stats")
                 .default_open(false)
                 .show(ui, |ui| {
                     ui.label(format!("FPS: {:.0}", app_state.last_fps()));
@@ -45,8 +44,7 @@ pub fn draw_debug_window(
                     ui.label(format!("Drawn: {}", app_state.drawn_entities()));
                 });
 
-            // --- SECTION 2: CAMERA & MOUSE ---
-            egui::CollapsingHeader::new("🎥 Camera & Mouse")
+            egui::CollapsingHeader::new("Camera & Mouse")
                 .default_open(false)
                 .show(ui, |ui| {
                     ui.label(format!("Zoom: {:.2}x", camera.zoom()));
@@ -73,7 +71,7 @@ pub fn draw_debug_window(
                         let is_selected = world.selected_ids().contains(id);
 
                         let header_text = if is_selected {
-                            format!("▶ Entity {:?}", id)
+                            format!("> Entity {:?}", id)
                         } else {
                             format!("Entity {:?}", id)
                         };
@@ -143,4 +141,19 @@ pub fn draw_coords(painter: &egui::Painter, rect: egui::Rect, camera: &Camera) {
         }
         x += ss;
     }
+}
+pub fn draw_state(ctx: &egui::Context, app_state: &AppState) {
+    egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            let status_text = format!(
+                "MODE: {}",
+                if app_state.is_insert {
+                    "INSERT"
+                } else {
+                    "NORMAL"
+                }
+            );
+            ui.colored_label(egui::Color32::WHITE, status_text);
+        });
+    });
 }

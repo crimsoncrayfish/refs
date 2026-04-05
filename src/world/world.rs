@@ -35,14 +35,19 @@ impl World {
     pub fn clear_selected(&mut self) {
         self.selected.clear();
     }
-    pub fn select_top_entity_at_pos(&mut self, pos: Pos2) {
+    pub fn select_entity(&mut self, id: EntityId) {
+        self.selected.push(id);
+    }
+    pub fn find_top_entity_at_pos(&mut self, pos: Pos2) -> Option<EntityId> {
         let clicked = self
             .entities
             .iter()
             .filter(|(_, e)| e.contains_pos(pos))
             .max_by_key(|(_, e)| e.z_index);
         if let Some((&el_id, _)) = clicked {
-            self.selected.push(el_id);
+            Some(el_id)
+        } else {
+            None
         }
     }
     pub fn selected_ids(&self) -> &Vec<EntityId> {
