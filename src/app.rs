@@ -192,6 +192,11 @@ impl App {
         if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
             self.state.toggle_debug();
         }
+        if i.key_pressed(egui::Key::Delete)
+            && let Some(selected_id) = self.world.selected_id()
+        {
+            self.world.delete_entity(&selected_id);
+        }
     }
 }
 impl eframe::App for App {

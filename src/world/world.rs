@@ -50,4 +50,7 @@ impl World {
             None
         }
     }
+    pub fn delete_entity(&mut self, entity_id: &EntityId) {
+        self.entities.remove(entity_id);
+    }
 }
