@@ -1,8 +1,30 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    fmt::Display,
+    time::{Duration, SystemTime},
+};
 
 use eframe::egui::{self, Color32, CornerRadius, InputState, PointerButton, Pos2, Response};
 
 use crate::{camera::Camera, draw, world::world::World};
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Action {
+    None,
+    Scale,
+    Rotate,
+    Translate,
+}
+
+impl Display for Action {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => write!(f, "None"),
+            Self::Scale => write!(f, "Scale"),
+            Self::Rotate => write!(f, "Rotate"),
+            Self::Translate => write!(f, "Translate"),
+        }
+    }
+}
 
 pub struct App {
     state: AppState,
@@ -24,6 +46,7 @@ pub struct AppState {
     pub debug: bool,
     pub show_coords: bool,
     pub show_grid: bool,
+    pub current_action: Action,
 }
 impl AppState {
     pub fn new() -> Self {
@@ -40,6 +63,7 @@ impl AppState {
             current_fps: 0.0,
             mouse_pos: None,
             drawn_entities: 0,
+            current_action: Action::None,
         }
     }
     pub fn reset(&mut self) {
@@ -48,6 +72,7 @@ impl AppState {
         self.show_grid = true;
         self.track_fps = false;
         self.debug = false;
+        self.current_action = Action::None;
     }
     pub fn toggle_insert(&mut self) {
         self.is_insert = !self.is_insert;
@@ -60,6 +85,20 @@ impl AppState {
     }
     pub fn toggle_debug(&mut self) {
         self.debug = !self.debug;
+    }
+    pub fn toggle_scale(&mut self) {
+        if self.current_action == Action::Scale {
+            self.current_action = Action::None;
+        } else {
+            self.current_action = Action::Scale;
+        }
+    }
+    pub fn toggle_rotate(&mut self) {
+        if self.current_action == Action::Rotate {
+            self.current_action = Action::None;
+        } else {
+            self.current_action = Action::Rotate;
+        }
     }
     pub fn drawn_entities(&self) -> i32 {
         self.drawn_entities
@@ -78,6 +117,9 @@ impl AppState {
     }
     pub fn last_fps(&self) -> f64 {
         self.last_fps
+    }
+    pub fn current_action(&self) -> &Action {
+        &self.current_action
     }
     pub fn calculate_fps(&mut self) {
         if !self.track_fps {
@@ -136,6 +178,16 @@ impl App {
         }
         draw::draw_world(&painter, &self.world, &self.camera, &mut self.state);
 
+        match self.state.current_action {
+            Action::None => {}
+            Action::Rotate => {
+                draw::draw_rotate_menu(&painter, rect, self.state.mouse_pos());
+            }
+            Action::Scale => {
+                draw::draw_scale_menu(&painter, rect, self.state.mouse_pos());
+            }
+            Action::Translate => {}
+        }
         self.state.allow_inputs = true;
         if self.state.debug {
             self.state.calculate_fps();
@@ -210,23 +262,29 @@ impl App {
         }
     }
     fn handle_global_inputs_always(&mut self, i: &InputState) {
-        if i.key_pressed(egui::Key::I) {
+        if i.key_released(egui::Key::I) {
             self.state.toggle_insert();
         }
-        if !i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
+        if !i.modifiers.ctrl && i.key_released(egui::Key::Space) {
             self.state.toggle_grid();
         }
-        if i.modifiers.ctrl && i.key_pressed(egui::Key::Space) {
+        if i.modifiers.ctrl && i.key_released(egui::Key::Space) {
             self.state.toggle_coords();
         }
-        if !i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
+        if !i.modifiers.ctrl && i.key_released(egui::Key::Escape) {
             self.reset();
         }
-        if i.modifiers.ctrl && i.key_pressed(egui::Key::Escape) {
+        if i.modifiers.ctrl && i.key_released(egui::Key::Escape) {
             self.state.toggle_debug();
         }
-        if i.key_pressed(egui::Key::Delete) && self.world.selected_ids().len() > 0 {
+        if i.key_released(egui::Key::Delete) && self.world.selected_ids().len() > 0 {
             self.world.delete_selected();
+        }
+        if i.key_released(egui::Key::S) {
+            self.state.toggle_scale();
+        }
+        if i.key_released(egui::Key::R) {
+            self.state.toggle_rotate();
         }
     }
 }

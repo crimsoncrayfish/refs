@@ -1,6 +1,9 @@
 use eframe::egui::{self, Color32, CornerRadius, Stroke};
 
-use crate::util::{pos2::Pos2, rect::Rect, vec2::Vec2};
+use crate::{
+    camera::Camera,
+    util::{pos2::Pos2, rect::Rect, vec2::Vec2},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct EntityId(u32);
@@ -15,40 +18,42 @@ impl EntityId {
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Entity {
-    pub coord: Pos2,
-    pub _size: Rect,
+    pub rect: Rect,
     pub z_index: u32,
 }
 
 impl Entity {
-    pub fn new_at_pos(pos: Pos2) -> Self {
+    pub fn new_at_pos(pos: Pos2, size: Vec2) -> Self {
         Self {
-            coord: pos,
-            _size: Rect::zero(),
+            rect: Rect::new(pos - size / 2.0, size),
             z_index: 0,
         }
     }
-    pub fn draw_at(&self, painter: &egui::Painter, pos: egui::Pos2, zoom: f32, selected: bool) {
-        let radius = 10.0 * zoom;
+    pub fn coord(&self) -> Pos2 {
+        self.rect.pos
+    }
+    pub fn draw_at(&self, painter: &egui::Painter, camera: &Camera, selected: bool) {
+        let radius = self.rect.width() / 2.0 * camera.zoom();
         let color = if selected {
-            Color32::from_rgb(0, 0, 200)
+            Color32::from_rgb(0, 0, 255)
         } else {
             Color32::from_rgb(100, 100, 100)
         };
+        let pos = camera.world_pos2_to_pos2(self.rect.center());
         if selected {
             let rect = egui::Rect::from_center_size(pos, egui::vec2(radius * 2.0, radius * 2.0));
             draw_selection_box(painter, rect);
         }
         painter.circle_filled(pos, radius, color);
     }
-    fn to_rect(&self) -> Rect {
-        Rect::from_center_size(self.coord, Vec2::splat(20.0))
-    }
     pub fn contains_pos(&self, pos: Pos2) -> bool {
-        self.to_rect().contains(pos)
+        self.rect.contains(pos)
     }
     pub fn move_by(&mut self, delta: Vec2) {
-        self.coord += delta;
+        self.rect.pos += delta;
+    }
+    pub fn scale(&mut self, scale: f32) {
+        self.rect.scale_current_from_center(scale);
     }
 }
 

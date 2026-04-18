@@ -3,21 +3,20 @@
 //pub fn draw_debug_menu() {}
 //pub fn draw_help_menu() {}
 
-use crate::{app::AppState, camera::Camera, world::world::World};
+use crate::{
+    app::{Action, App, AppState},
+    camera::Camera,
+    world::world::World,
+};
 use eframe::egui::{self, Color32, Response, Stroke, pos2};
 
 pub fn draw_world(painter: &egui::Painter, world: &World, camera: &Camera, state: &mut AppState) {
     let mut drawn_entities = 0;
     for (id, element) in world.entities().iter() {
-        if !camera.coordinates.contains(element.coord) {
+        if !camera.coordinates.contains(element.coord()) {
             continue;
         }
-        element.draw_at(
-            painter,
-            camera.world_pos2_to_pos2(element.coord),
-            camera.zoom(),
-            world.selected_ids().contains(id),
-        );
+        element.draw_at(painter, camera, world.selected_ids().contains(id));
         drawn_entities += 1;
     }
     state.set_drawn_entities(drawn_entities);
@@ -42,6 +41,11 @@ pub fn draw_debug_window(
                     ui.label(format!("Elapsed: {}s", app_state.elapsed().as_secs()));
                     ui.label(format!("Entities: {}", world.entities().len()));
                     ui.label(format!("Drawn: {}", app_state.drawn_entities()));
+                });
+            egui::CollapsingHeader::new("State")
+                .default_open(false)
+                .show(ui, |ui| {
+                    ui.label(format!("Current Action: {}", app_state.current_action()));
                 });
 
             egui::CollapsingHeader::new("Camera & Mouse")
@@ -89,6 +93,64 @@ pub fn draw_debug_window(
     } else {
         None
     }
+}
+pub fn draw_scale_menu(painter: &egui::Painter, rect: egui::Rect, mouse_pos: Option<egui::Pos2>) {
+    painter.circle_filled(
+        rect.center(),
+        50.0,
+        Color32::from_rgba_unmultiplied(100, 100, 100, 50),
+    );
+    let scale = match mouse_pos {
+        Some(pos) => {
+            let distance = rect.center().distance(pos);
+            painter.circle_filled(
+                rect.center(),
+                distance,
+                Color32::from_rgba_unmultiplied(100, 100, 100, 50),
+            );
+            format!("{:.2}", distance / 50.0)
+        }
+        None => "1.0".to_string(),
+    };
+    painter.text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        scale,
+        egui::FontId::monospace(20.0),
+        Color32::from_rgba_unmultiplied(180, 180, 180, 160),
+    );
+}
+pub fn draw_rotate_menu(painter: &egui::Painter, rect: egui::Rect, mouse_pos: Option<egui::Pos2>) {
+    painter.circle_filled(
+        rect.center(),
+        50.0,
+        Color32::from_rgba_unmultiplied(100, 100, 100, 50),
+    );
+    if let Some(pos) = mouse_pos {
+        painter.line_segment(
+            [rect.center(), pos],
+            egui::Stroke::new(2.0, Color32::from_rgba_unmultiplied(100, 100, 100, 50)),
+        );
+    }
+    /*let scale = match mouse_pos {
+        Some(pos) => {
+            let distance = rect.center().distance(pos);
+            painter.circle_filled(
+                rect.center(),
+                distance,
+                Color32::from_rgba_unmultiplied(100, 100, 100, 50),
+            );
+            format!("{:.2}", distance / 50.0)
+        }
+        None => "1.0".to_string(),
+    };*/
+    /*painter.text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        scale,
+        egui::FontId::monospace(20.0),
+        Color32::from_rgba_unmultiplied(180, 180, 180, 160),
+    );*/
 }
 
 pub fn draw_grid(painter: &egui::Painter, rect: egui::Rect, camera: &Camera) {

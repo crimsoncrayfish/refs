@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    util::pos2::Pos2,
+    util::{pos2::Pos2, vec2::Vec2},
     world::entity::{Entity, EntityId},
 };
 
@@ -25,8 +25,10 @@ impl World {
         }
     }
     pub fn add_entity_at(&mut self, pos: Pos2) {
-        self.entities
-            .insert(self.next_entity_id, Entity::new_at_pos(pos));
+        self.entities.insert(
+            self.next_entity_id,
+            Entity::new_at_pos(pos, Vec2::splat(10.0)),
+        );
         self.next_entity_id = self.next_entity_id.next();
     }
     pub fn entities(&self) -> &HashMap<EntityId, Entity> {
@@ -36,8 +38,16 @@ impl World {
         self.selected.clear();
     }
     pub fn select_entity(&mut self, id: EntityId) {
-        assert!(!self.selected.contains(&id));
-        self.selected.push(id);
+        if !self.selected.contains(&id) {
+            self.selected.push(id);
+        }
+    }
+    pub fn scale_selected(&mut self, scale: f32) {
+        for id in self.selected.iter() {
+            let e = self.entities.get_mut(id).expect("no entity with id found");
+            println!("scaling entity");
+            e.scale(scale);
+        }
     }
     pub fn find_top_entity_at_pos(&self, pos: Pos2) -> Option<EntityId> {
         self.entities

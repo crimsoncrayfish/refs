@@ -137,6 +137,14 @@ impl Rect {
         debug_assert!(scale > 0.0);
         Self::from_center_size(self.center(), self.size * scale)
     }
+
+    pub fn scale_current_from_center(&mut self, scale: f32) {
+        assert!(scale > 0.0);
+        let new_size = self.size * scale;
+
+        self.pos = self.pos - ((new_size - self.size) / 2.0);
+        self.size = new_size;
+    }
     pub fn scale_from_center(&self, scale: f32) -> Self {
         assert!(scale > 0.0);
         let new_size = self.size * scale;
